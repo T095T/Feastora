@@ -36,10 +36,10 @@ class User(AbstractUser):
     #not using username field
     username   = None
     email      = models.EmailField(unique=True,db_index=True)
-    loginPhone = models.CharField(max_length=15, unique=True,db_index=True)
+    phoneNumber = models.CharField(max_length=15, unique=True,db_index=True)
     role       = models.CharField(max_length=20, choices=Role.choices)
     USERNAME_FIELD  = 'email'        # ← login with email
-    REQUIRED_FIELDS = ['loginPhone']      # ← required when creating superuser
+    REQUIRED_FIELDS = ['phoneNumber']      # ← required when creating superuser
 
     objects = UserManager()          # ← plug in custom manager
 
@@ -60,8 +60,8 @@ class User(AbstractUser):
 
 
 # ── Role-specific profiles ──────────────────────────────────────────────────
-# phone on User is for login
-# phone on profiles is the contact number for that role
+# phoneNumber on User is for login
+# phoneNumber on profiles is the contact number for that role
 # they can be different — rider's personal number vs business contact
 
 class CustomerProfile(models.Model):
@@ -84,6 +84,7 @@ class RestaurantProfile(models.Model):
     isOpen     = models.BooleanField(default=True)
     avg_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
     speciality = models.CharField(max_length=100, blank=True)
+
     
 
     def __str__(self):
@@ -96,6 +97,21 @@ class RiderProfile(models.Model):
     isAvailable    = models.BooleanField(default=True)
     avg_rating     = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
     phoneNumber    = models.CharField(max_length=15)
+    age            = models.IntegerField()
+    isDisabled     = models.BooleanField(default=False)
+    isVerified     = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Rider: {self.user.email} {self.phoneNumber}"
+
+class AdminProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='admin_profile')
+    address = models.TextField(blank=True)
+    phoneNumber = models.CharField(max_length=15)
+    firstName = models.CharField(max_length=20)
+    lastName = models.CharField(max_length=20)
+    isActive = models.BooleanField(default=True)
+    isVerified = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Admin: {self.user.email}"
