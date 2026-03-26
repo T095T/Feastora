@@ -1,0 +1,22 @@
+# virtualenv
+/myenv/
+.venv/
+venv/
+env/
+
+
+
+# env files
+.env
+.env.*
+!.env.example
+
+
+
+**/migrations/**
+!**/migrations
+!**/migrations/__init__.py
+
+# django / local dev
+db.sqlite3
+*.log
