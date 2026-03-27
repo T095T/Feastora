@@ -19,7 +19,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
-    def get_query_set(self):
+    def get_queryset(self):
         user = self.request.user
 
         if user.is_authenticated and user.is_customer:

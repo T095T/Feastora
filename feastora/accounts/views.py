@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 from .serializers import CustomerRegistrationSerializer, RestaurantRegisterSerializer, RiderRegisterSerializer,EmailLoginSerializer,AdminRegistrationSerializer
 from .models import User, CustomerProfile, RestaurantProfile, RiderProfile
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
@@ -27,6 +27,17 @@ class LoginView(APIView):
         user = serializer.validated_data['user']
         tokens = get_tokens_for_user(user)
         return Response({'tokens':tokens},status=status.HTTP_200_OK)
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request):
+        try:
+            token = RefreshToken(request.data.get('refresh'))
+            token.blacklist()
+            return Response({'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
+        except Exception:
+            return Response({'message': 'Invalid refresh token'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomerRegisterView(APIView):

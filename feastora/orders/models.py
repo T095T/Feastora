@@ -16,6 +16,9 @@ class Order(models.Model):
     restaurant = models.ForeignKey(RestaurantProfile,on_delete=models.CASCADE,related_name='orders')
     rider = models.ForeignKey(RiderProfile,on_delete=models.SET_NULL,related_name='orders',null=True,blank=True)
     status = models.CharField(max_length=20,choices=Status.choices,default=Status.PLACED)
+    subtotal = models.DecimalField(max_digits=10,decimal_places=2,default=0.00)
+    delivery_fee = models.DecimalField(max_digits=10,decimal_places=2,default=0.00)
+    total = models.DecimalField(max_digits=10,decimal_places=2,default=0.00)
 
     delivery_address = models.TextField()
 
@@ -31,6 +34,11 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order {self.id} - {self.customer.user.email} - {self.status}"
+
+    def calculate_total(self):
+        self.subtotal = sum(item.total_price for item in self.items.all())
+        self.total = self.subtotal + self.delivery_fee
+        self.save()
 
 
     

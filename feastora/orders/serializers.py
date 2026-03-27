@@ -1,7 +1,9 @@
+from decimal import Decimal
 from rest_framework import serializers
 from .models import *
 from menu.models import MenuItem
 from accounts.models import CustomerProfile, RestaurantProfile, RiderProfile
+from django.db import transaction
 
 class OrderCreateSerializer(serializers.Serializer):
     customer = serializers.PrimaryKeyRelatedField(queryset=CustomerProfile.objects.all())
@@ -11,8 +13,23 @@ class OrderCreateSerializer(serializers.Serializer):
     items = serializers.ListField(child=serializers.PrimaryKeyRelatedField(queryset=MenuItem.objects.all()))
     status = serializers.ChoiceField(choices=Order.Status.choices, default=Order.Status.PLACED)
 
+    #to check if the items belong to the selected restaurant
+    def validate(self, data):
+        restaurant = data.get('restaurant')
+        items = data.get('items', [])
+
+        if not items:
+            raise serializers.ValidationError({"items": "At least one item is required."})
+
+        for item in items:
+            if item.category.restaurant_id != restaurant.id:
+                raise serializers.ValidationError(
+                    {"items": "Can only select items from one restaurant"}
+                )
+        return data
+
     def validate_items(self,value):
-        if len(value) == 0:
+        if len(value) <= 0:
             raise serializers.ValidationError("At least one item is required.")
         return value
 
@@ -22,27 +39,36 @@ class OrderCreateSerializer(serializers.Serializer):
         return value
 
     def create(self, validated_data):
-        customer = validated_data.pop('customer')
-        restaurant = validated_data.pop('restaurant')
-        rider = validated_data.pop('rider', None)
-        delivery_address = validated_data.pop('delivery_address')
-        items = validated_data.pop('items')
-        status = validated_data.pop('status', Order.Status.PLACED)
+        request = self.context['request']
+        user = request.user
 
-        order = Order.objects.create(
-            customer=customer,
-            restaurant=restaurant,
-            rider=rider,
-            delivery_address=delivery_address,
-            status=status,
-        )
-        for item in items:
-            OrderItem.objects.create(
-                order=order,
-                menu_item=item,
-                item_name=item.name,
-                price_at_order=item.price,
+        if not hasattr(user, 'customer_profile'):
+            raise serializers.ValidationError("Customer profile not found.")
+
+        customer = user.customer_profile
+        restaurant = validated_data.pop('restaurant')
+        delivery_address = validated_data.pop('delivery_address')
+        items_data = validated_data.pop('items')
+        status = validated_data.pop('status', Order.Status.PLACED)
+        delivery_fee = validated_data.get("delivery_fee", Decimal("0.00"))
+
+        with transaction.atomic():
+            order = Order.objects.create(
+                customer=customer,
+                restaurant=restaurant,
+                delivery_address=delivery_address,
+                status=status,
+                delivery_fee=delivery_fee,
             )
+            for item in items_data:
+                OrderItem.objects.create(
+                    order=order,
+                    menu_item=item,
+                    item_name=item.name,
+                    price_at_order=item.price,
+                    quantity=1,
+                )
+            order.calculate_total()
         return order
     
 
@@ -62,4 +88,10 @@ class OrderUpdateSerializer(serializers.Serializer):
 class OrderListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ['id','customer','restaurant','rider','delivery_address','status','created_at','updated_at','accepted_at','picked_at','cancelled_at','delivered_at']
+        fields = [
+            "id", "customer", "restaurant", "rider",
+            "delivery_address", "status",
+            "subtotal", "delivery_fee", "total",
+            "created_at", "updated_at",
+            "accepted_at", "picked_at", "cancelled_at", "delivered_at",
+        ]
