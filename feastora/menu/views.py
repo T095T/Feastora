@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from accounts.permissions import IsRestaurant
 from .models import MenuCategory, MenuItem
 from .serializers import (
     MenuCategoryCreateSerializer, MenuCategoryUpdateSerializer, MenuCategoryListSerializer,
@@ -17,14 +18,15 @@ class MenuCategoryViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
     #restaurant seeing only there MenuCategories
-        if user.is_authenticated and user.is_restaurant():
+        if user.is_authenticated and user.is_restaurant:
             return MenuCategory.objects.filter(restaurant=user.restaurant_profile).prefetch_related('items')
+        return MenuCategory.objects.all().prefetch_related('items')
 
     
 
     def get_permissions(self):
         if self.action in ['create','update','destroy','partial_update']:
-            return [IsAuthenticated()]
+            return [IsAuthenticated(), IsRestaurant()]
         return [AllowAny()]
 
     def get_serializer_class(self):
@@ -73,7 +75,7 @@ class MenuItemViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAuthenticated()]
+            return [IsAuthenticated(), IsRestaurant()]
         return [AllowAny()]
 
     def get_serializer_class(self):

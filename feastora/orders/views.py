@@ -2,7 +2,7 @@
 from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated,AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import Order
 from .serializers import (
@@ -12,7 +12,7 @@ from .serializers import (
     
 )
 from accounts.models import RiderProfile
-# from accounts.permissions import IsCustomer, IsRestaurant, IsRider
+from accounts.permissions import IsCustomer
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
@@ -30,11 +30,12 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         if user.is_authenticated and user.is_restaurant:
             return Order.objects.filter(restaurant=user.restaurant_profile).select_related('customer','rider').prefetch_related('items')
+        return Order.objects.none()
         
     def get_permissions(self):
-        if self.action in ['create','update','destroy','partial_update']:
-            return [IsAuthenticated()]
-        return [AllowAny()]
+        if self.action == 'create':
+            return [IsAuthenticated(), IsCustomer()]
+        return [IsAuthenticated()]
     
     def get_serializer_class(self):
         if self.action == 'create':

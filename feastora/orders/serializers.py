@@ -2,16 +2,13 @@ from decimal import Decimal
 from rest_framework import serializers
 from .models import *
 from menu.models import MenuItem
-from accounts.models import CustomerProfile, RestaurantProfile, RiderProfile
+from accounts.models import RestaurantProfile
 from django.db import transaction
 
 class OrderCreateSerializer(serializers.Serializer):
-    customer = serializers.PrimaryKeyRelatedField(queryset=CustomerProfile.objects.all())
     restaurant = serializers.PrimaryKeyRelatedField(queryset=RestaurantProfile.objects.all())
-    rider = serializers.PrimaryKeyRelatedField(queryset=RiderProfile.objects.all(), required=False, allow_null=True)
     delivery_address = serializers.CharField(max_length=255)
     items = serializers.ListField(child=serializers.PrimaryKeyRelatedField(queryset=MenuItem.objects.all()))
-    status = serializers.ChoiceField(choices=Order.Status.choices, default=Order.Status.PLACED)
 
     #to check if the items belong to the selected restaurant
     def validate(self, data):
@@ -49,16 +46,14 @@ class OrderCreateSerializer(serializers.Serializer):
         restaurant = validated_data.pop('restaurant')
         delivery_address = validated_data.pop('delivery_address')
         items_data = validated_data.pop('items')
-        status = validated_data.pop('status', Order.Status.PLACED)
-        delivery_fee = validated_data.get("delivery_fee", Decimal("0.00"))
 
         with transaction.atomic():
             order = Order.objects.create(
                 customer=customer,
                 restaurant=restaurant,
                 delivery_address=delivery_address,
-                status=status,
-                delivery_fee=delivery_fee,
+                status=Order.Status.PLACED,
+                delivery_fee=Decimal("0.00"),
             )
             for item in items_data:
                 OrderItem.objects.create(

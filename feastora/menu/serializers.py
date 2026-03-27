@@ -10,8 +10,8 @@ class MenuCategoryCreateSerializer(serializers.Serializer):
     order = serializers.IntegerField(default=0)
 
     def validate_order(self,value):
-        if value<=0:
-            raise serializers.ValidationError("Order must be greater than 0.")
+        if value < 0:
+            raise serializers.ValidationError("Order must be greater than or equal to 0.")
         return value 
 
     def create(self,validated_data):
@@ -30,8 +30,8 @@ class MenuCategoryUpdateSerializer(serializers.Serializer):
     order = serializers.IntegerField(default=0)
 
     def validate_order(self,value):
-        if value <= 0:
-            raise serializers.ValidationError("Order must be greater than 0.")
+        if value < 0:
+            raise serializers.ValidationError("Order must be greater than or equal to 0.")
         return value 
 
     def update(self,instance,validated_data):

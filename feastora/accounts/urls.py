@@ -5,6 +5,7 @@ from .views import (
     CustomerRegisterView,
     RestaurantRegisterView,
     RiderRegisterView,
+    AdminRegisterView,
     LogoutView,
     
 )
@@ -13,6 +14,7 @@ urlpatterns = [
     path('register/customer/',   CustomerRegisterView.as_view(),   name='register-customer'),
     path('register/restaurant/', RestaurantRegisterView.as_view(), name='register-restaurant'),
     path('register/rider/',      RiderRegisterView.as_view(),      name='register-rider'),
+    path('register/admin/',      AdminRegisterView.as_view(),      name='register-admin'),
 
     path('login/',         LoginView.as_view(),       name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
