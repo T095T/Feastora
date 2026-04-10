@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from .models import *
+from restaurant.models import Restaurant
 
 
 class MenuCategoryCreateSerializer(serializers.Serializer):
-    restaurant = serializers.PrimaryKeyRelatedField(queryset=RestaurantProfile.objects.all())
+    restaurant = serializers.PrimaryKeyRelatedField(queryset=Restaurant.objects.all())
     name = serializers.CharField(max_length=100)
     description = serializers.CharField(allow_blank=True)
     images = serializers.ImageField(allow_empty_file=True,required=False)
@@ -47,7 +48,10 @@ class MenuCategoryUpdateSerializer(serializers.Serializer):
         fields = ['name','description','images']
 
 
-
+class MenuCategoryListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MenuCategory
+        fields = ['name','description','images']
 
 
 class MenuItemCreateSerializer(serializers.Serializer):

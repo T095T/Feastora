@@ -1,14 +1,28 @@
 from django.db import models
-from accounts.models import RestaurantProfile
+from restaurant.models import Restaurant
 
 
+
+
+
+
+
+
+class Menu(models.Model):
+    restaurant = models.OneToOneField(Restaurant,on_delete=models.CASCADE,related_name='menu')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.restaurant.name} Menu"
 
 class MenuCategory(models.Model):
-    restaurant = models.ForeignKey(RestaurantProfile,on_delete=models.CASCADE,related_name='categories')
+    menu = models.ForeignKey(Menu,on_delete=models.CASCADE,related_name='categories')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    images = models.ImageField(upload_to='menu_categories/',blank=True)
+    image = models.ImageField(upload_to='menu/category/',blank=True)
     order = models.PositiveIntegerField(default=0)
+    isAvailable = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['order','name']
@@ -29,7 +43,7 @@ class MenuItem(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10,decimal_places=2)
-    images = models.ImageField(upload_to='menu_items/',blank=True)
+    image = models.ImageField(upload_to='menu/item/',blank=True)
     food_type = models.CharField(max_length=10,choices=FoodType.choices)
     isAvailable = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

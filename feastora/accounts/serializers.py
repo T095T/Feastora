@@ -5,7 +5,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .models import User, CustomerProfile, RestaurantProfile, RiderProfile,AdminProfile
+from .models import User, CustomerProfile, RiderProfile,AdminProfile
+from restaurant.models import Restaurant
 
 
 #Login serializer
@@ -76,15 +77,14 @@ class CustomerRegistrationSerializer(serializers.Serializer):
         return user 
 
 
-
 class RestaurantRegisterSerializer(serializers.Serializer):
-    email            = serializers.EmailField()
-    phoneNumber      = serializers.CharField(max_length=15)    # login + restaurant contact phone
-    password         = serializers.CharField(write_only=True, min_length=8)
-    restaurant_name  = serializers.CharField(max_length=200)
-    address          = serializers.CharField()
-    cuisine          = serializers.CharField(max_length=100, required=False, allow_blank=True)
-    speciality       = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    email = serializers.EmailField()
+    phoneNumber = serializers.CharField(max_length=15)    # login + restaurant contact phone
+    password = serializers.CharField(write_only=True, min_length=8)
+    restaurant_name = serializers.CharField(max_length=200)
+    address = serializers.CharField()
+    cuisine = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    speciality = serializers.CharField(max_length=100, required=False, allow_blank=True)
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
@@ -99,27 +99,32 @@ class RestaurantRegisterSerializer(serializers.Serializer):
         return value
 
     def create(self, validated_data):
-        restaurant_name  = validated_data.pop('restaurant_name')
-        address          = validated_data.pop('address')
-        cuisine          = validated_data.pop('cuisine', '')
-        speciality       = validated_data.pop('speciality', '')
-        phoneNumber      = validated_data['phoneNumber']
+        restaurant_name = validated_data.pop("restaurant_name")
+        address = validated_data.pop("address")
+        cuisine = validated_data.pop("cuisine", "")
+        speciality = validated_data.pop("speciality", "")
+        phoneNumber = validated_data["phoneNumber"]
+        email = validated_data["email"]
 
         user = User.objects.create_user(
-            email    = validated_data['email'],
-            phoneNumber = phoneNumber,
-            password = validated_data['password'],
-            role     = User.Role.RESTAURANT
+            email=email,
+            phoneNumber=phoneNumber,
+            password=validated_data["password"],
+            role=User.Role.RESTAURANT,
         )
-        RestaurantProfile.objects.create(
-            user    = user,
-            name    = restaurant_name,
-            phoneNumber = phoneNumber,
-            address = address,
-            cuisine = cuisine,
-            speciality = speciality
+        Restaurant.objects.create(
+            user=user,
+            name=restaurant_name,
+            phoneNumber=phoneNumber,
+            address=address,
+            email=email,
+            cuisine=cuisine,
+            speciality=speciality,
         )
         return user
+
+
+
 
 
 class RiderRegisterSerializer(serializers.Serializer):

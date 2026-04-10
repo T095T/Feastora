@@ -20,3 +20,7 @@ env/
 # django / local dev
 db.sqlite3
 *.log
+
+**/__pycache__/*
+__pycache__/
+*.py[cod]

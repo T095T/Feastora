@@ -2,11 +2,11 @@ from decimal import Decimal
 from rest_framework import serializers
 from .models import *
 from menu.models import MenuItem
-from accounts.models import RestaurantProfile
+from restaurant.models import Restaurant
 from django.db import transaction
 
 class OrderCreateSerializer(serializers.Serializer):
-    restaurant = serializers.PrimaryKeyRelatedField(queryset=RestaurantProfile.objects.all())
+    restaurant = serializers.PrimaryKeyRelatedField(queryset=Restaurant.objects.all())
     delivery_address = serializers.CharField(max_length=255)
     items = serializers.ListField(child=serializers.PrimaryKeyRelatedField(queryset=MenuItem.objects.all()))
 

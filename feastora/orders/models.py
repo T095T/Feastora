@@ -1,5 +1,6 @@
 from django.db import models
-from accounts.models import CustomerProfile, RestaurantProfile,RiderProfile
+from accounts.models import CustomerProfile, RiderProfile
+from restaurant.models import Restaurant
 from menu.models import MenuItem
 # Create your models here.
 
@@ -13,7 +14,7 @@ class Order(models.Model):
         CANCELLED  = 'CANCELLED',  'Cancelled'
 
     customer = models.ForeignKey(CustomerProfile,on_delete=models.CASCADE,related_name='orders')
-    restaurant = models.ForeignKey(RestaurantProfile,on_delete=models.CASCADE,related_name='orders')
+    restaurant = models.ForeignKey(Restaurant,on_delete=models.CASCADE,related_name='orders')
     rider = models.ForeignKey(RiderProfile,on_delete=models.SET_NULL,related_name='orders',null=True,blank=True)
     status = models.CharField(max_length=20,choices=Status.choices,default=Status.PLACED)
     subtotal = models.DecimalField(max_digits=10,decimal_places=2,default=0.00)
