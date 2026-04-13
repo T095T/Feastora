@@ -2,6 +2,8 @@ from django.db import models
 from accounts.models import CustomerProfile, RiderProfile
 from restaurant.models import Restaurant
 from menu.models import MenuItem
+import uuid
+from django.utils import timezone
 # Create your models here.
 
 class Order(models.Model):
@@ -13,6 +15,7 @@ class Order(models.Model):
         DELIVERED  = 'DELIVERED',  'Delivered'
         CANCELLED  = 'CANCELLED',  'Cancelled'
 
+    order_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     customer = models.ForeignKey(CustomerProfile,on_delete=models.CASCADE,related_name='orders')
     restaurant = models.ForeignKey(Restaurant,on_delete=models.CASCADE,related_name='orders')
     rider = models.ForeignKey(RiderProfile,on_delete=models.SET_NULL,related_name='orders',null=True,blank=True)
@@ -34,12 +37,28 @@ class Order(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Order {self.id} - {self.customer.user.email} - {self.status}"
+        return f"Order {self.orderid} - {self.customer.user.email} - {self.status}"
 
     def calculate_total(self):
         self.subtotal = sum(item.total_price for item in self.items.all())
         self.total = self.subtotal + self.delivery_fee
-        self.save()
+        
+       
+
+    def save(self, *args, **kwargs):
+        if self.status == self.Status.ACCEPTED and not self.accepted_at:
+            self.accepted_at = timezone.now()
+
+        if self.status == self.Status.PICKED and not self.picked_at:
+            self.picked_at = timezone.now()
+
+        if self.status == self.Status.DELIVERED and not self.delivered_at:
+            self.delivered_at = timezone.now()
+
+        if self.status == self.Status.CANCELLED and not self.cancelled_at:
+            self.cancelled_at = timezone.now()
+
+        super().save(*args, **kwargs)
 
 
     

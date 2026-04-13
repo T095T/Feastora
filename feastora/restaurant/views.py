@@ -5,11 +5,13 @@ from rest_framework.views import APIView
 from .serializers import RestaurantDetailSerializer, RestaurantListSerializer
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from .filters import *
 
 # Create your views here.
 
 class RestaurantListView(APIView):
     permission_classes = [AllowAny]
+    filtering_class = RestaurantFilters
 
     def get(self,request):
         queryset = Restaurant.objects.all()

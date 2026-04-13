@@ -3,6 +3,7 @@ from django.db import models
 # Create your models here.
 from django.db import models
 from django.conf import settings
+from accounts.models import CustomerProfile
 from restaurant.models import Restaurant
 from menu.models import MenuItem
 
@@ -15,7 +16,7 @@ class Cart(models.Model):
         ("CHECKED_OUT", "CHECKED_OUT"),
     )
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="carts")
+    customer = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name="carts")
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
 
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)

@@ -20,12 +20,10 @@ class MenuCategory(models.Model):
     menu = models.ForeignKey(Menu,on_delete=models.CASCADE,related_name='categories')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    image = models.ImageField(upload_to='menu/category/',blank=True)
-    order = models.PositiveIntegerField(default=0)
     isAvailable = models.BooleanField(default=True)
 
     class Meta:
-        ordering = ['order','name']
+        ordering = ['name']
         verbose_name = 'Menu Category'
         verbose_name_plural = 'Menu Categories'
         

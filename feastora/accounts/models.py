@@ -78,7 +78,7 @@ class CustomerProfile(BaseProfile):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='customer_profile')
     
     def __str__(self):
-        return f"Customer: {self.user.email} {self.phoneNumber}"
+        return f"Customer: {self.user.email} "
 
 class AdminProfile(BaseProfile):
     user       = models.OneToOneField(User, on_delete=models.CASCADE, related_name='admin_profile')

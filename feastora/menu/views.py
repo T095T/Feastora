@@ -1,13 +1,13 @@
-from django.shortcuts import render
+from django.contrib.auth import PermissionDenied
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from accounts.permissions import IsRestaurant
-from .models import MenuCategory, MenuItem
+from .models import MenuCategory, MenuItem, Menu
 from .serializers import (
     MenuCategoryCreateSerializer, MenuCategoryUpdateSerializer, MenuCategoryListSerializer,
     MenuItemCreateSerializer, MenuItemUpdateSerializer,
-    MenuItemListSerializer,
+    MenuItemListSerializer, MenuViewSerializer,
 )
 
 # Create your views here.
@@ -19,10 +19,23 @@ class MenuCategoryViewSet(viewsets.ModelViewSet):
 
     #restaurant seeing only there MenuCategories
         if user.is_authenticated and user.is_restaurant:
-            return MenuCategory.objects.filter(restaurant=user.restaurant_profile).prefetch_related('items')
+            return MenuCategory.objects.filter(menu__restaurant=user.restaurant_profile).prefetch_related('items')
         return MenuCategory.objects.all().prefetch_related('items')
 
-    
+    def perform_create(self,serializer):
+        user = self.request.user
+        if user.is_authenticated and user.is_restaurant:
+            menu, _ = Menu.objects.get_or_create(restaurant=user.restaurant_profile)
+            serializer.save(menu=menu)
+            return
+        raise PermissionDenied("Only restaurants can create categories.")
+
+    def perform_update(self, serializer):
+        category = self.get_object()
+        user = self.request.user
+        if category.menu.restaurant != user.restaurant_profile:
+            raise PermissionDenied("You cannot edit another restaurant's category.")
+        serializer.save()
 
     def get_permissions(self):
         if self.action in ['create','update','destroy','partial_update']:
@@ -62,7 +75,7 @@ class MenuItemViewSet(viewsets.ModelViewSet):
 
         if user.is_authenticated and user.is_restaurant:
             return MenuItem.objects.filter(
-                category__restaurant=user.restaurant_profile
+                category__menu__restaurant=user.restaurant_profile
             ).select_related('category')
 
         # customers browse by restaurant
@@ -70,7 +83,7 @@ class MenuItemViewSet(viewsets.ModelViewSet):
         restaurant_id = self.request.query_params.get('restaurant_id')
         qs = MenuItem.objects.filter(isAvailable=True).select_related('category')
         if restaurant_id:
-            qs = qs.filter(category__restaurant_id=restaurant_id)
+            qs = qs.filter(category__menu__restaurant_id=restaurant_id)
         return qs
 
     def get_permissions(self):
@@ -85,7 +98,49 @@ class MenuItemViewSet(viewsets.ModelViewSet):
             return MenuItemUpdateSerializer
         return MenuItemListSerializer
 
+
+    def perform_create(self,serializer):
+        user = self.request.user
+        category = serializer.validated_data.get('category')
+        if category.menu.restaurant != user.restaurant_profile:
+            raise PermissionDenied("Invalid Category")
+        serializer.save()
+
+    def perform_update(self, serializer):
+        item = self.get_object()
+        user = self.request.user
+        next_category = serializer.validated_data.get('category', item.category)
+        if item.category.menu.restaurant != user.restaurant_profile:
+            raise PermissionDenied("You cannot edit another restaurant's item.")
+        if next_category.menu.restaurant != user.restaurant_profile:
+            raise PermissionDenied("Invalid Category")
+        serializer.save()
+
+
     def perform_destroy(self, instance):
         # soft delete
         instance.isAvailable = False
         instance.save()
+
+
+
+class MenuViewSet(viewsets.ModelViewSet):
+    queryset = Menu.objects.all()
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        user = self.request.user
+        #restaurant seeing only there menu
+        if user.is_authenticated and user.is_restaurant:
+            return Menu.objects.filter(restaurant=user.restaurant_profile).prefetch_related('categories__items')
+        
+
+        #public view
+        restaurant_id = self.request.query_params.get('restaurant_id')
+        if restaurant_id:
+            return Menu.objects.filter(restaurant_id = restaurant_id).prefetch_related('categories__items')
+        return Menu.objects.none()
+
+    
+    def get_serializer_class(self):
+        return MenuViewSerializer

@@ -19,19 +19,17 @@ class OrderCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError({"items": "At least one item is required."})
 
         for item in items:
-            if item.category.restaurant_id != restaurant.id:
+            if item.category.menu.restaurant_id != restaurant.id:
                 raise serializers.ValidationError(
                     {"items": "Can only select items from one restaurant"}
                 )
+            if not item.isAvailable:
+                raise serializers.ValidationError(f"{item.name} is not available.")
         return data
 
-    def validate_items(self,value):
-        if len(value) <= 0:
-            raise serializers.ValidationError("At least one item is required.")
-        return value
 
     def validate_delivery_address(self,value):
-        if not value:
+        if not value.strip():
             raise serializers.ValidationError("Delivery address is required.")
         return value
 
@@ -64,16 +62,12 @@ class OrderCreateSerializer(serializers.Serializer):
                     quantity=1,
                 )
             order.calculate_total()
+            order.save()
         return order
     
 
 class OrderUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Order.Status.choices, required=True)
-
-    def validate_status(self,value):
-        if value not in [Order.Status.ACCEPTED, Order.Status.PREPARING, Order.Status.PICKED, Order.Status.DELIVERED, Order.Status.CANCELLED]:
-            raise serializers.ValidationError("Invalid status.")
-        return value
     
     def update(self,instance,validated_data):
         instance.status = validated_data.get('status',instance.status)

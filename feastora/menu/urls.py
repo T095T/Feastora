@@ -5,8 +5,9 @@ from .views import *
 router = DefaultRouter()
 router.register('categories', MenuCategoryViewSet, basename='menu-category')
 router.register('items', MenuItemViewSet, basename='menu-item')
+router.register('menus', MenuViewSet, basename='menu')
 
 urlpatterns = [
-    path('', include(router.urls))
-   
+    path('', include(router.urls)),
+    
 ]
