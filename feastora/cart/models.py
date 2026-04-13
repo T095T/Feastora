@@ -36,17 +36,22 @@ class Cart(models.Model):
         ]
 
     def __str__(self):
-        return f"Cart {self.id} - {self.user}"
+        return f"Cart {self.id} - {self.customer}"
 
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
-
     quantity = models.PositiveIntegerField()
-
-
     price_at_add_time = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Cart Item'
+        verbose_name_plural = 'Cart Items'
+        unique_together = ['cart', 'menu_item']
 
     def __str__(self):
         return f"{self.menu_item.name} x {self.quantity}"
